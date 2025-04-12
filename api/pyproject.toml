@@ -1,0 +1,28 @@
+[tool.poetry]
+name = "ingradiant-parser"
+version = "0.1.0"
+description = ""
+authors = ["younis3 <younis@omicmd.com>"]
+readme = "README.md"
+
+[tool.poetry.dependencies]
+python = "^3.12"
+pydantic = "^2.11.3"
+fastapi = "^0.115.12"
+uvicorn = "^0.34.0"
+asyncpg = "^0.30.0"
+pydantic-settings = "^2.8.1"
+fsspec = "^2025.3.2"
+polygon = "^1.2.6"
+llama-index = "^0.12.30"
+llama-index-readers-web = "^0.3.9"
+firecrawl-py = "^1.15.0"
+llama-index-llms-gemini = "^0.4.14"
+openai = "^1.72.0"
+llama-index-llms-google-genai = "^0.1.7"
+setuptools = "^78.1.0"
+
+
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"
