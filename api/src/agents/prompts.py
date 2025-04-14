@@ -3,7 +3,7 @@ from llama_index.core.prompts import PromptTemplate
 RECIPE_RPOMPT = """
 You are a structured data extraction agent. You MUST return data using the provided function schema. Do NOT return freeform text.
 You are a helpful assistant that extracts detailed recipe data from the given text. 
-The content comes from a cooking blog or recipe website and may contain editorial content, tips, and reviews.
+The content comes  recipe website and may contain editorial content, tips, and reviews.
 
 Your job is to extract structured information and return it as a JSON object with the following fields:
 
@@ -12,10 +12,10 @@ Required:
 - description: A short summary describing the dish.
 - ingredients: A list of ingredients. Each ingredient must include:
   - name: The name of the ingredient (e.g., "all-purpose flour").
-  - category: The type/category of the ingredient (e.g., "dairy", "spice", "vegetable"). Leave empty if uncertain.
+  - category: The type/category of the ingredient (e.g., "grain", "herb", "wax"). Leave empty if uncertain.
   - quantity: The amount (e.g., "1 ½ cups", "2 tablespoons", "a pinch"). Leave empty if not specified.
 
-- steps: A list of cooking instructions in order. Each step should include:
+- steps: A list of instructions in order. Each step should include:
   - order: Step number starting from 1.
   - instruction: A single, clear action from the recipe.
 
@@ -61,30 +61,76 @@ Please extract **all products** mentioned in the text. For each product, extract
 - quantity
 - price
 
-Respond with a JSON array in the following format:
-[
-  {
-    "name": "...",
-    "category": "...",
-    "quantity": ...,
-    "price": ...
-  },
-  ...
-]
+Respond with a JSON object containing a single key "products". The value of "products" should be an array of JSON objects, where each object represents a product in the following format:
+{{
+  "name": "...",
+  "category": "...",
+  "quantity": ...,
+  "price": ...
+}}
 
-Make sure all objects are valid and follow the schema. Only include products that contain at least a name and category.
+Example Response Format:
+{{
+  "products": [
+    {{
+      "name": "Example Product 1",
+      "category": "Example Category A",
+      "quantity": "1 unit",
+      "price": "10.99"
+    }},
+    {{
+      "name": "Example Product 2",
+      "category": "Example Category B",
+      "quantity": "500g",
+      "price": "5.49"
+    }}
+  ]
+}}
+
+Make sure the entire response is a single valid JSON object and the product objects within the array are valid and follow the schema. Only include products that contain at least a name and category.
 """
+
+OTHER_CONTENT_PROMPT = """
+You are a helpful assistant that extracts ingredients information from a given text from web pgae.
+
+Here is the text from the web page:
+{input_text}
+
+Please scan the text and extract any information related to ingredients and any structured recipe-like content that might be present. Structure your output as a JSON object with the following optional fields:
+
+Optional:
+- mentioned_ingredients: A list of ingredients explicitly discussed or mentioned on the page. Each ingredient should be represented as a JSON object with the following keys:
+  - name (string, required): The name of the ingredient.
+  - category (string, optional): The type or category of the ingredient (e.g., "chemical", "plant extract").
+
+- embedded_recipe: If a structured set of ingredients and instructions (resembling a recipe) is found on the page, extract it according to the following schema (leave empty or null if no such structure is found):
+  {{
+    "title": (string, optional): The title or name associated with the instructions.
+    "description": (string, optional): A brief summary of what the instructions are for.
+    "ingredients": (array of objects, optional): A list of ingredient objects, where each object has:
+      - "name": (string, required)
+      - "category": (string, optional)
+      - "quantity": (string, optional)
+    "steps": (array of objects, optional): A list of step objects, where each object has:
+      - "order": (integer, optional): The step number (if available).
+      - "instruction": (string, required): A single action or instruction.
+    "notes": (array of strings, optional): Any additional notes or information related to the instructions.
+  }}
+
+Return the result as a single valid JSON object that matches the structure described above. If no ingredients or recipe-like content are found, return an empty JSON object: `{}`.
+"""
+
 
 CLASSIFICATION_PROMPT = PromptTemplate("""
 You are a smart content classifier for web pages.
 
 Your job is to classify the **primary purpose** of the page as one of:
 
-- "recipe": if the main purpose of the content is to teach the reader how to prepare or cook a meal. This includes step-by-step instructions, ingredient lists, and cooking methods. It may mention product brands or links to purchase items, but the focus should be on preparing a dish.
+- "recipe": if the main purpose of the content is to provide a detailed guide on how to prepare or create something by combining a list of ingredients or components through a series of steps. This could include food recipes, health remedies, DIY mixtures, etc. The key elements are a list of required components and sequential instructions for their combination or use.
 
-- "product": if the main purpose of the content is to present, describe, compare, review, or sell one or more products. This includes product listings, ecommerce pages, shopping guides, or top-10 comparisons. The content may mention how a product is used in cooking, but it does not provide a full recipe.
+- "product": if the main purpose of the content is to present, describe, compare, review, or sell one or more products. Mentions of ingredients might be in the context of product composition or usage.
 
-- "other": if the content does not fall into either category above. This may include blog posts, opinion pieces, lifestyle articles, or content unrelated to food or products.
+- "blog": if the main purpose of the content is to share information, stories, opinions, or other content that is not primarily a recipe or product listing. This can include general discussions about ingredients, food science, wellness tips, without providing a specific, step-by-step guide to create something.
 
 Return ONLY the type.
 

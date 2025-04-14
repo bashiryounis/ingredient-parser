@@ -1,10 +1,11 @@
 import logging
 from fastapi import APIRouter, HTTPException, Query
 from src.agents.tools import (
+    read_url_content,
     classify_web_content,
     extract_recipe,
     extract_products,
-    read_url_content,
+    extract_ingredient_info
 )
 from src.agents.schema import ContentEnum
 
@@ -30,22 +31,19 @@ def extract_ingredient(url: str = Query(..., description="The URL to extract con
         if classification == ContentEnum.recipe:
             result = extract_recipe(page_content)
             return {
-                "type": "recipe",
                 "data": result.model_dump()  # or result.dict()
             }
 
         elif classification == ContentEnum.product:
             result = extract_products(page_content)
             return {
-                "type": "product",
                 "data": result.model_dump()
             }
 
         else:
-            logger.warning(f"Unclassified content for URL: {url}")
+            result =  extract_ingredient_info(page_content)
             return {
-                "type": "other",
-                "data": {}
+                "data": result.model_dump()
             }
 
     except Exception as e:

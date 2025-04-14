@@ -10,20 +10,18 @@ class WebClassifier(BaseModel):
     type: ContentEnum
 
 
-class ExtractProductItem(BaseModel):
-    name: str
-    category: str
-    quantity: int
-    price: float
-
-class ExtractProductList(BaseModel):
-    products: List[ExtractProductItem]
-
-class Ingredient(BaseModel):
+class IngredientBase(BaseModel):
     """Structured information for a single ingredient."""
     name: str
     category: Optional[str] = None
-    quantity: Optional[str] = None  # Accepts flexible formats like "1 ½ cups", "2 tbsp"
+
+class ExtractProductItem(IngredientBase):
+    price: Optional[str] = None  
+    quantity: Optional[str] = None 
+
+class ExtractProductList(BaseModel):
+    """List of products extracted from a webpage."""
+    products: List[ExtractProductItem]
 
 
 class Step(BaseModel):
@@ -39,12 +37,15 @@ class NutritionInfo(BaseModel):
     carbs: Optional[str] = None
     protein: Optional[str] = None
 
+class IngredientRecipe(IngredientBase):
+    """Ingredient with optional quantity and preparation details."""
+    quantity: Optional[str] = None
 
 class ExtractRecipe(BaseModel):
     """Comprehensive schema for a recipe."""
     title: str
     description: Optional[str]
-    ingredients: List[Ingredient]
+    ingredients: List[IngredientRecipe]
     steps: List[Step]
     servings: Optional[int]
     prep_time: Optional[str]
@@ -58,3 +59,8 @@ class ExtractRecipe(BaseModel):
     tags: Optional[List[str]]
     nutrition: Optional[NutritionInfo]
     notes: Optional[List[str]]
+
+class ExtractIngredients(BaseModel):
+    """Response schema for ingredient extraction."""
+    ingredient : Optional[list[IngredientBase]]
+    recipe: Optional[ExtractRecipe]
